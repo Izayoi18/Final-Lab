@@ -15,8 +15,8 @@ class MyAppTest(unittest.TestCase):
         self.assertEqual(response.data.decode(), "<p>Hello, World!</p>")
 
     def test_getdrivers(self):
-        response = self.app.get("/drivers")
+        response = self.app.get("/license")
         self.assertEqual(response.status_code, 200)
-        self.assertTrue("Joshua" in response.data.decode())
+        self.assertTrue("John Doe" in response.data.decode())
 if __name__ == "__main__":
     unittest.main()
