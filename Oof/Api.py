@@ -101,5 +101,20 @@ def update_license(id):
     )
 
 
+@app.route("/licenses/<int:id>", methods=["DELETE"])
+def delete_license(id):
+    cur = mysql.connection.cursor()
+    cur.execute("""DELETE FROM license where id = %s""", (id,))
+    mysql.connection.commit()
+    rows_affected = cur.rowcount
+    cur.close()
+    return make_response(
+        jsonify(
+            {"message": "license deleted successfully", "rows_affected": rows_affected}
+        ),
+        200,
+    )
+
+
 if __name__ == "__main__":
     app.run(debug=True)
