@@ -2,6 +2,7 @@ import unittest
 import warnings
 from Api import app
 
+
 class MyAppTest(unittest.TestCase):
     def setUp(self):
         app.config["TESTING"] = True
@@ -23,6 +24,7 @@ class MyAppTest(unittest.TestCase):
         response = self.app.get("/licenses/4")
         self.assertEqual(response.status_code, 200)
         self.assertTrue("Bob Brown" in response.data.decode())
+
 
 if __name__ == "__main__":
     unittest.main()
