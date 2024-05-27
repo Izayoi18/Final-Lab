@@ -1,4 +1,4 @@
-from flask import Flask, make_response, jsonify
+from flask import Flask, make_response, jsonify, request
 from flask_mysqldb import MySQL
 
 app = Flask(__name__)
@@ -40,8 +40,31 @@ def get_violation_description_by_license(id):
         FROM license
         JOIN violations ON license.id = violations.license_id
         JOIN vehicle ON license.id = vehicle.license_id
-        WHERE license.id = 5;
+        WHERE license.id = {}
     """.format(id))
     return make_response(jsonify({"license_id" : id, "count": len(data), "violation_description": data}),201)
+
+@app.route("/licenses", methods=["POST"])
+def add_license():
+    cur = mysql.connection.cursor()
+    info = request.get_json()
+    name = info["name"]
+    license_number = info["license_number"]
+    cur.execute(
+            """INSERT INTO license (name, license_number) VALUE (%s, %s)""", (name, license_number),
+    )
+    mysql.connection.commit()
+    print("rows(s) affected:{}".format(cur.rowcount))
+    rows_affected = cur.rowcount
+    cur.close()
+    return make_response( jsonify({"message": "license added successfully", "rows_affected": rows_affected}), 201)
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
     app.run(debug=True)
