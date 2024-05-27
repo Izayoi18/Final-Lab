@@ -1,15 +1,28 @@
 from flask import Flask, make_response, jsonify, request
 from flask_mysqldb import MySQL
+from flask_httpauth import HTTPBasicAuth
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config["MYSQL_HOST"] = "localhost"
 app.config["MYSQL_USER"] = "root"
 app.config["MYSQL_PASSWORD"] = "Akamatsu"
 app.config["MYSQL_DB"] = "driver"
-
 app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 
 mysql = MySQL(app)
+auth = HTTPBasicAuth()
+
+# Replace this with your actual user data
+users = {
+    "Joshua": generate_password_hash("Akamatsu"),
+}
+
+
+@auth.verify_password
+def verify_password(username, password):
+    if username in users and check_password_hash(users.get(username), password):
+        return username
 
 
 @app.route("/")
@@ -26,18 +39,21 @@ def data_fetch(query):
 
 
 @app.route("/licenses", methods=["GET"])
+@auth.login_required
 def get_licenses():
     data = data_fetch("""select * from license""")
     return make_response(jsonify(data), 200)
 
 
 @app.route("/licenses/<int:id>", methods=["GET"])
+@auth.login_required
 def get_license_by_id(id):
     data = data_fetch("""select * from license where id = {}""".format(id))
     return make_response(jsonify(data), 200)
 
 
 @app.route("/licenses/<int:id>/violation_description", methods=["GET"])
+@auth.login_required
 def get_violation_description_by_license(id):
     data = data_fetch(
         """
@@ -57,6 +73,7 @@ def get_violation_description_by_license(id):
 
 
 @app.route("/licenses", methods=["POST"])
+@auth.login_required
 def add_license():
     cur = mysql.connection.cursor()
     info = request.get_json()
@@ -79,6 +96,7 @@ def add_license():
 
 
 @app.route("/licenses/<int:id>", methods=["PUT"])
+@auth.login_required
 def update_license(id):
     cur = mysql.connection.cursor()
     info = request.get_json()
@@ -102,6 +120,7 @@ def update_license(id):
 
 
 @app.route("/licenses/<int:id>", methods=["DELETE"])
+@auth.login_required
 def delete_license(id):
     cur = mysql.connection.cursor()
     cur.execute("""DELETE FROM license where id = %s""", (id,))
@@ -114,11 +133,15 @@ def delete_license(id):
         ),
         200,
     )
+
+
 @app.route("/licenses/format", methods=["GET"])
+@auth.login_required
 def get_params():
     fmt = request.args.get('id')
     foo = request.args.get('aaaa')
-    return make_response(jsonify({"format" : fmt, "foo": foo}), 200)
+    return make_response(jsonify({"format": fmt, "foo": foo}), 200)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
