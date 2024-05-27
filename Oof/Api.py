@@ -16,6 +16,7 @@ mysql = MySQL(app)
 def hello_world():
     return "<p>Hello, World!</p>"
 
+
 def data_fetch(query):
     cur = mysql.connection.cursor()
     cur.execute(query)
@@ -23,26 +24,37 @@ def data_fetch(query):
     cur.close()
     return data
 
+
 @app.route("/licenses", methods=["GET"])
 def get_licenses():
     data = data_fetch("""select * from license""")
     return make_response(jsonify(data), 200)
+
 
 @app.route("/licenses/<int:id>", methods=["GET"])
 def get_license_by_id(id):
     data = data_fetch("""select * from license where id = {}""".format(id))
     return make_response(jsonify(data), 200)
 
+
 @app.route("/licenses/<int:id>/violation_description", methods=["GET"])
 def get_violation_description_by_license(id):
-    data = data_fetch("""
+    data = data_fetch(
+        """
         SELECT license.name, violations.violation_description, violations.penalty, vehicle.vehicle_color
         FROM license
         JOIN violations ON license.id = violations.license_id
         JOIN vehicle ON license.id = vehicle.license_id
         WHERE license.id = {}
-    """.format(id))
-    return make_response(jsonify({"license_id" : id, "count": len(data), "violation_description": data}),201)
+    """.format(
+            id
+        )
+    )
+    return make_response(
+        jsonify({"license_id": id, "count": len(data), "violation_description": data}),
+        201,
+    )
+
 
 @app.route("/licenses", methods=["POST"])
 def add_license():
@@ -51,19 +63,42 @@ def add_license():
     name = info["name"]
     license_number = info["license_number"]
     cur.execute(
-            """INSERT INTO license (name, license_number) VALUE (%s, %s)""", (name, license_number),
+        """INSERT INTO license (name, license_number) VALUE (%s, %s)""",
+        (name, license_number),
     )
     mysql.connection.commit()
     print("rows(s) affected:{}".format(cur.rowcount))
     rows_affected = cur.rowcount
     cur.close()
-    return make_response( jsonify({"message": "license added successfully", "rows_affected": rows_affected}), 201)
+    return make_response(
+        jsonify(
+            {"message": "license added successfully", "rows_affected": rows_affected}
+        ),
+        201,
+    )
 
 
-
-
-
-
+@app.route("/licenses/<int:id>", methods=["PUT"])
+def update_license(id):
+    cur = mysql.connection.cursor()
+    info = request.get_json()
+    name = info["name"]
+    license_number = info["license_number"]
+    cur.execute(
+        """
+        UPDATE license SET name = %s, license_number = %s WHERE id = %s
+    """,
+        (name, license_number, id),
+    )
+    mysql.connection.commit()
+    rows_affected = cur.rowcount
+    cur.close()
+    return make_response(
+        jsonify(
+            {"message": "license updated successfully", "rows_affected": rows_affected}
+        ),
+        200,
+    )
 
 
 if __name__ == "__main__":
